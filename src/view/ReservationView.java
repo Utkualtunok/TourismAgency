@@ -1,0 +1,53 @@
+package view;
+
+import javax.swing.*;
+
+public class ReservationView extends Layout {
+    private JPanel conteiner;
+    private JLabel lbl_hotel_name;
+    private JTextField fld_hotel_name;
+    private JTextField fld_city;
+    private JPanel pnl_hotel_info;
+    private JLabel fld_star;
+    private JTextField textField1;
+    private JRadioButton rbtn_parking;
+    private JRadioButton rbtn_wifi;
+    private JRadioButton rbtn_pool;
+    private JRadioButton rbtn_fitness;
+    private JRadioButton rbtn_concierge;
+    private JRadioButton rbtn_spa;
+    private JRadioButton rbtn_room_service;
+    private JLabel lbl_city;
+    private JLabel lbl_room_type;
+    private JTextField fld_room_type;
+    private JLabel lbl_pension_type;
+    private JTextField fld_pension_type;
+    private JLabel lbl_in_date;
+    private JTextField fld_in_date;
+    private JLabel lbl_out_date;
+    private JTextField fld_out_date;
+    private JTextField fld_total_price;
+    private JLabel lbl_total_price;
+    private JLabel lbl_bed_capacity;
+    private JTextField fld_bed_capacity;
+    private JTextField fld_meter;
+    private JLabel lbl_meter;
+    private JRadioButton rbtn_tv;
+    private JRadioButton rbtn_minibar;
+    private JRadioButton rbtn_console;
+    private JRadioButton rbtn_case;
+    private JRadioButton rbtn_projection;
+    private JPanel pnl_room_info;
+    private JPanel pnl_customer_info;
+    private JTextField fld_customer_count;
+    private JLabel lbl_customer_count;
+    private JLabel lbl_customer_name;
+    private JTextField fld_customer_name;
+    private JTextField fld_customer_citizen_id;
+    private JLabel lbl_customer_citizen_id;
+    private JTextField fld_customer_mail;
+    private JLabel lbl_customer_mail;
+    private JLabel lbl_customer_mpno;
+    private JTextField fld_customer_mpno;
+    private JButton btn_reservation_save;
+}
