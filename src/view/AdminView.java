@@ -13,6 +13,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
+//Yönetici ekranı - kullanıcı listeleme, ekleme ve silme işlemleri gerçekleştirilir.
+
 public class AdminView  extends Layout {
     private JPanel cointeiner;
     private JPanel pnl_top;

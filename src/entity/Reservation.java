@@ -1,6 +1,6 @@
-package entity.reservations;
+package entity;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class Reservation {
     private int reservation_id;
@@ -8,10 +8,27 @@ public class Reservation {
     private String  customer_name;
     private int customer_phone;
     private String customer_mail;
-    private String reservation_note;
-    private Date reservation_in_date;
-    private Date reservation_out_date;
+    private LocalDate reservation_in_date;
+    private LocalDate reservation_out_date;
     private int guest_count;
+    private int total_price;
+    private int customer_citizen_id;
+
+    public int getTotal_price() {
+        return total_price;
+    }
+
+    public void setTotal_price(int total_price) {
+        this.total_price = total_price;
+    }
+
+    public int getCustomer_citizen_id() {
+        return customer_citizen_id;
+    }
+
+    public void setCustomer_citizen_id(int customer_citizen_id) {
+        this.customer_citizen_id = customer_citizen_id;
+    }
 
     public int getReservation_id() {
         return reservation_id;
@@ -53,27 +70,19 @@ public class Reservation {
         this.customer_mail = customer_mail;
     }
 
-    public String getReservation_note() {
-        return reservation_note;
-    }
-
-    public void setReservation_note(String reservation_note) {
-        this.reservation_note = reservation_note;
-    }
-
-    public Date getReservation_in_date() {
+    public LocalDate getReservation_in_date() {
         return reservation_in_date;
     }
 
-    public void setReservation_in_date(Date reservation_in_date) {
+    public void setReservation_in_date(LocalDate reservation_in_date) {
         this.reservation_in_date = reservation_in_date;
     }
 
-    public Date getReservation_out_date() {
+    public LocalDate getReservation_out_date() {
         return reservation_out_date;
     }
 
-    public void setReservation_out_date(Date reservation_out_date) {
+    public void setReservation_out_date(LocalDate reservation_out_date) {
         this.reservation_out_date = reservation_out_date;
     }
 

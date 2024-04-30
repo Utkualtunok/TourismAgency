@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+//Veritabanı bağlantı sınıfım
 public class Db {
     private static Db instance = null;
     private Connection connection = null;

@@ -16,6 +16,8 @@ public class UserDao {
     public UserDao() {
         this.conn = Db.getInstance();
     }
+
+    //Tüm kullanıcıları getiren metot
     public ArrayList<User> findAll(){
         ArrayList<User> userList = new ArrayList<>();
         String sql = "SELECT * FROM public.user";
@@ -29,6 +31,7 @@ public class UserDao {
         }
         return userList;
     }
+    //Kullanıcı kontrolu yapılan metot
     public User findByLogin(String username, String password){
         User obj = null;
         String query = "SELECT * FROM public.user WHERE user_name = ? AND user_password = ?";
@@ -45,6 +48,7 @@ public class UserDao {
         }
         return obj;
     }
+    //Verilerin modele dönüştüren metot
     public User match(ResultSet rs) throws SQLException {
         User obj = new User();
         obj.setUser_id(rs.getInt("user_id"));
@@ -53,6 +57,8 @@ public class UserDao {
         obj.setUser_role(Role.valueOf(rs.getString("user_role")));
         return obj;
     }
+
+    //Seçilen Id ye göre user getiren metot
     public User getById(int id) {
         User user = null;
         String query = "SELECT * FROM public.user WHERE user_id = ?";
@@ -69,6 +75,7 @@ public class UserDao {
         }
         return user;
     }
+    //Kullanıcı kaydı
     public boolean save(User user) {
         String query = "INSERT INTO public.user " +
                 "(" +
@@ -91,6 +98,7 @@ public class UserDao {
             return false;
         }
     }
+    //Kullanıcı bilgileri güncelleme
     public boolean update(User user) {
         String query = "UPDATE public.user SET " +
                 "user_name = ?, " +
@@ -111,6 +119,7 @@ public class UserDao {
         }
         return false;
     }
+    //Silme işlemi
     public boolean delete(int user_id){
         String query = "DELETE FROM public.user WHERE user_id = ?";
         try {

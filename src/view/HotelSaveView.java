@@ -1,11 +1,8 @@
 package view;
 
+import business.HotelsManager;
 import core.Helper;
-import dao.HotelsDao;
-import dto.HotelWithDetails;
-import entity.hotel.Hotel;
-import entity.hotel.HotelDetails;
-
+import entity.Hotel;
 import javax.swing.*;
 
 public class HotelSaveView extends Layout {
@@ -30,38 +27,57 @@ public class HotelSaveView extends Layout {
     private JButton btn_hotel_save;
     private JTextField fld_hotel_city;
     private JTextField fld_district;
+    private HotelsManager hotelManager;
+    private Hotel hotel;
 
-    public HotelSaveView() {
+    public HotelSaveView(Object o) {
+        this.hotel = hotel;
+        this.hotelManager = new HotelsManager();
         this.add(conteiner);
-        this.guiInitilaze(1000,500);
+        this.guiInitilaze(1000, 500);
+        loadHotelAddComponent();
+
+    }
+
+    public void loadHotelAddComponent() {
 
         btn_hotel_save.addActionListener(e -> {
-            HotelsDao hotelsDao = new HotelsDao();
-            Hotel hotel = new Hotel();
-            HotelDetails hotelDetails = new HotelDetails(rbtn_parking.isSelected(),rbtn_wifi.isSelected()
-                    ,rbtn_fitness.isSelected(),rbtn_pool.isSelected(),rbtn_concierge.isSelected(),
-                    rbtn_spa.isSelected(),rbtn_room_service.isSelected());
 
-            String hotelName = fld_hotel_name.getText();
-            String hotelMail = fld_hotel_mail.getText();
-            String hotelPhone = fld_hotel_phone.getText();
-            String hotelAddress = fld_address.getText();
-            String hotelCity = fld_hotel_city.getText();
-            String district = fld_district.getText();
-            String hotelStar = fld_hotel_star.getText();
+            // Kontrol edilecek text alanları bir diziye ekleniyor.
+            JTextField[] checkFieldList = {this.fld_hotel_name, this.fld_hotel_mail, this.fld_hotel_phone, this.fld_address};
 
-            hotel.setHotel_name(hotelName);
-            hotel.setHotel_mail(hotelMail);
-            hotel.setHotel_city(hotelCity);
-            hotel.setHotel_district(district);
-            hotel.setHotel_address(hotelAddress);
-            hotel.setHotel_mpno(hotelPhone);
-            hotel.setHotel_star(hotelStar);
+            // Eğer kontrol edilecek alanlardan biri boşsa, kullanıcıya bir uyarı mesajı gösterilir.
+            if (Helper.isFieldListEmpty(checkFieldList)) {
+                Helper.showMessage("fill");
+            } else {
 
+                // Eğer tüm alanlar dolu ise, yeni bir otel nesnesi oluşturulur ve bilgileri alınır.
+                boolean result = true;
+                Hotel hotels = new Hotel();
+                hotels.setHotel_name(fld_hotel_name.getText());
+                hotels.setHotel_mail(fld_hotel_mail.getText());
+                hotels.setHotel_mpno(fld_hotel_phone.getText());
+                hotels.setHotel_city(fld_hotel_city.getText());
+                hotels.setHotel_address(fld_address.getText());
+                hotels.setHotel_star(fld_hotel_star.getText());
+                hotels.setCar_park(rbtn_parking.isSelected());
+                hotels.setPool(rbtn_pool.isSelected());
+                hotels.setFitness(rbtn_fitness.isSelected());
+                hotels.setConcierge(rbtn_concierge.isSelected());
+                hotels.setSpa(rbtn_spa.isSelected());
+                hotels.setRoom_service(rbtn_room_service.isSelected());
 
-            HotelWithDetails hotelWithDetails = new HotelWithDetails(hotel,hotelDetails);
-            hotelsDao.addHotel(hotelWithDetails);
-            Helper.showMessage("done");
+                if (hotels.getHotel_id() == 0) {
+                    result = this.hotelManager.save(hotels);
+                    dispose();
+                }
+                if (result) {
+                    Helper.showMessage("done");
+
+                } else {
+                    Helper.showMessage("error");
+                }
+            }
         });
     }
 }

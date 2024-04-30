@@ -1,10 +1,7 @@
 package dao;
 
 import core.Db;
-import dto.HotelWithDetails;
-import entity.hotel.Hotel;
-import entity.hotel.HotelDetails;
-
+import entity.Hotel;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -16,98 +13,100 @@ public class HotelsDao {
         this.connection = Db.getInstance();
     }
 
-    public boolean addHotelDetail(HotelDetails details){
-        String query = "INSERT INTO public.hotel_details (hotel_id,is_car_parking,is_wifi,is_fitness,is_pool,is_concierge,is_spa,is_room_service)" +
-                " VALUES (?,?,?,?,?,?,?,?)";
+    //Tüm otelleri getiren metot
+    public ArrayList<Hotel> findAll() {
+        ArrayList<Hotel> hotelList = new ArrayList<>();
+        String sql = "SELECT * FROM public.hotel";
         try {
-            PreparedStatement pr = connection.prepareStatement(query);
-            pr.setInt(1, details.getHotel_id());
-            pr.setBoolean(2, details.isIs_car_parking());
-            pr.setBoolean(3, details.isIs_wifi());
-            pr.setBoolean(4, details.isIs_fitness());
-            pr.setBoolean(5, details.isIs_pool());
-            pr.setBoolean(6, details.isIs_concierge());
-            pr.setBoolean(7, details.isIs_spa());
-            pr.setBoolean(8, details.isIs_room_service());
-            return pr.executeUpdate() != -1;
-
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-
-        return true;
-    }
-
-    public boolean addHotel(HotelWithDetails hotelWithDetails) {
-        String query = "INSERT INTO public.hotel (hotel_name,hotel_city,hotel_district,hotel_address,hotel_mail,hotel_mpno,hotel_star)" +
-                " VALUES (?,?,?,?,?,?,?)";
-        try {
-            PreparedStatement pr = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            pr.setString(1, hotelWithDetails.getHotel().getHotel_name());
-            pr.setString(2, hotelWithDetails.getHotel().getHotel_city());
-            pr.setString(3, hotelWithDetails.getHotel().getHotel_district());
-            pr.setString(4, hotelWithDetails.getHotel().getHotel_address());
-            pr.setString(5, hotelWithDetails.getHotel().getHotel_mail());
-            pr.setString(6, hotelWithDetails.getHotel().getHotel_mpno());
-            pr.setString(7, hotelWithDetails.getHotel().getHotel_star());
-
-            int rowsAffected = pr.executeUpdate();
-
-            if (rowsAffected > 0) {
-                ResultSet generatedKeys = pr.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    Long generatedId = generatedKeys.getLong(1);
-                    hotelWithDetails.getDetails().setHotel_id(Math.toIntExact(generatedId));
-                    boolean detail = addHotelDetail(hotelWithDetails.getDetails());
-                    if (detail){
-                        return true;
-                    }
-                    return false;
-                }
-            }
-
-            return false;
-
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public ArrayList<Hotel> getAllHotels() {
-        ArrayList<Hotel> hotels = new ArrayList<>();
-
-        String query = "SELECT * FROM public.hotel ORDER BY hotel_id ASC";
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+            ResultSet rs = this.connection.createStatement().executeQuery(sql);
             while (rs.next()) {
-                // ResultSet'ten verileri alarak bir Hotel nesnesi oluştur
-                int hotelId = rs.getInt("hotel_id");
-                String hotelName = rs.getString("hotel_name");
-                String hotelCity = rs.getString("hotel_city");
-                String hotelDistrict = rs.getString("hotel_district");
-                String hotelAddress = rs.getString("hotel_address");
-                String hotelMpno = rs.getString("hotel_mpno");
-                String hotelMail = rs.getString("hotel_mail");
-                String hotelStar = rs.getString("hotel_star");
-
-                Hotel hotel = new Hotel();
-                hotel.setHotel_id(hotelId);
-                hotel.setHotel_name(hotelName);
-                hotel.setHotel_city(hotelCity);
-                hotel.setHotel_district(hotelDistrict);
-                hotel.setHotel_address(hotelAddress);
-                hotel.setHotel_mpno(hotelMpno);
-                hotel.setHotel_mail(hotelMail);
-                hotel.setHotel_star(hotelStar);
-
-                hotels.add(hotel);
+                hotelList.add(this.match(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return hotelList;
+    }
 
-        return hotels;
+    //Verileri Otel nesnesine eşleyen metot
+    public Hotel match(ResultSet rs) throws SQLException {
+        Hotel obj = new Hotel();
+        obj.setHotel_id(rs.getInt("hotel_id"));
+        obj.setHotel_name(rs.getString("hotel_name"));
+        obj.setHotel_city(rs.getString("hotel_city"));
+        obj.setHotel_address(rs.getString("hotel_address"));
+        obj.setHotel_mail(rs.getString("hotel_mail"));
+        obj.setHotel_mpno(rs.getString("hotel_mpno"));
+        obj.setHotel_star(rs.getString("hotel_star"));
+        obj.setCar_park(rs.getBoolean("car_park"));
+        obj.setWifi(rs.getBoolean("wifi"));
+        obj.setPool(rs.getBoolean("pool"));
+        obj.setFitness(rs.getBoolean("fitness"));
+        obj.setConcierge(rs.getBoolean("concierge"));
+        obj.setSpa(rs.getBoolean("spa"));
+        obj.setRoom_service(rs.getBoolean("room_service"));
+        return obj;
+    }
+
+    //Otel kayıt metotu
+    public boolean save(Hotel hotel) {
+        String query = "INSERT INTO public.hotel" +
+                "(" +
+                "hotel_name," +
+                "hotel_city," +
+                "hotel_mail," +
+                "hotel_mpno," +
+                "hotel_address," +
+                "hotel_star," +
+                "car_park," +
+                "wifi," +
+                "pool," +
+                "fitness," +
+                "concierge," +
+                "spa," +
+                "room_service" +
+                ")" +
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        try {
+            PreparedStatement pr = connection.prepareStatement(query);
+            pr.setString(1, hotel.getHotel_name());
+            pr.setString(2, hotel.getHotel_city());
+            pr.setString(3, hotel.getHotel_mail());
+            pr.setString(4, hotel.getHotel_mpno());
+            pr.setString(5, hotel.getHotel_address());
+            pr.setString(6, hotel.getHotel_star());
+            pr.setBoolean(7, hotel.isCar_park());
+            pr.setBoolean(8, hotel.isWifi());
+            pr.setBoolean(9, hotel.isPool());
+            pr.setBoolean(10, hotel.isFitness());
+            pr.setBoolean(11, hotel.isConcierge());
+            pr.setBoolean(12, hotel.isSpa());
+            pr.setBoolean(13, hotel.isRoom_service());
+
+
+            return pr.executeUpdate() != -1;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return true;
+    }
+
+    // Belirli bir otel ID'si ile oteli getiren metot
+    public Hotel getById(int id) {
+        Hotel obj = null;
+        String query = "SELECT * FROM public.hotel WHERE hotel_id = ?";
+        try {
+            PreparedStatement pr = this.connection.prepareStatement(query);
+            pr.setInt(1, id);
+            ResultSet rs = pr.executeQuery();
+            if (rs.next()) {
+                obj = this.match(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return obj;
+
     }
 
 }

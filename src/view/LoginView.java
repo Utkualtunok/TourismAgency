@@ -7,6 +7,8 @@ import entity.User;
 
 import javax.swing.*;
 
+//Uygulama giriş ekranı burada girilen bilgilere göre Role göre sayfa yönlendirmesi yapılıyor.
+
 public class LoginView extends Layout {
     private JTextField fld_username;
     private JTextField fld_password;

@@ -61,17 +61,6 @@ public class Helper {
         }
     }
 
-
-    public static int extractNumber(String text) {
-        Pattern pattern = Pattern.compile("\\d+");
-        Matcher matcher = pattern.matcher(text);
-
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group());
-        } else {
-            throw new IllegalArgumentException("No number found in the text");
-        }
-    }
     public static boolean confirm(String str){
         optionPaneTR();
         String msg;

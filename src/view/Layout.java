@@ -17,8 +17,9 @@ public class Layout extends JFrame {
         this.setVisible(true);
     }
 
-    public void createTable(DefaultTableModel model, JTable table, Object[] col, ArrayList<Object[]> rows){
-        model.setColumnIdentifiers(col);
+    public void createTable(DefaultTableModel model, JTable table, Object[] columns, ArrayList<Object[]> rows) {
+
+        model.setColumnIdentifiers(columns);
         table.setModel(model);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setMaxWidth(75);
@@ -27,10 +28,10 @@ public class Layout extends JFrame {
         DefaultTableModel clearModel = (DefaultTableModel) table.getModel();
         clearModel.setRowCount(0);
 
-        if (rows == null){
+        if (rows == null) {
             rows = new ArrayList<>();
         }
-        for (Object[] row : rows){
+        for (Object[] row : rows) {
             model.addRow(row);
         }
     }

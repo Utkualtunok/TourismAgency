@@ -1,19 +1,17 @@
 package view;
 
+import business.HotelsManager;
+import business.PensionManager;
+import business.RoomManager;
+import business.SeasonManager;
+import core.ComboItem;
 import core.Helper;
-import dao.HotelsDao;
-import dao.PensionsDao;
-import dao.RoomsDao;
-import dao.SeasonDao;
-import dto.RoomWithDetails;
 import entity.Pension;
 import entity.Season;
-import entity.hotel.Hotel;
-import entity.room.Room;
-import entity.room.RoomDetails;
+import entity.Hotel;
+import entity.Room;
 
 import javax.swing.*;
-import java.util.ArrayList;
 
 public class RoomSaveView extends Layout {
     private JPanel conteiner;
@@ -44,74 +42,103 @@ public class RoomSaveView extends Layout {
     private JLabel lbl_projection;
     private JButton btn_room_save;
     private JComboBox cmb_season;
+    private RoomManager roomManager;
+    private Room room;
+    private HotelsManager hotelsManager;
+    private SeasonManager seasonManager;
+    private PensionManager pencionManager;
 
-    public RoomSaveView() {
+    //Yeni oda eklemek için kullanılan arayüz.
+
+    public RoomSaveView(Object o) {
         this.add(conteiner);
-        this.guiInitilaze(1500,400);
-        HotelsDao hotelsDao = new HotelsDao();
-        PensionsDao pensionsDao = new PensionsDao();
-        SeasonDao seasonDao = new SeasonDao();
+        this.guiInitilaze(1000,600);
+        this.roomManager = new RoomManager();
+        this.seasonManager = new SeasonManager(null);
+        this.pencionManager = new PensionManager(null);
+        this.hotelsManager = new HotelsManager();
+        this.room = new Room();
+        this.room = room;
+        this.cmb_room_type.setModel(new DefaultComboBoxModel<>(Room.RoomType.values()));
 
-        ArrayList<Hotel> otels = hotelsDao.getAllHotels();
-        ArrayList<Pension> pensions =  pensionsDao.getAllPensions();
-        ArrayList<Season> seasons =  seasonDao.getAllSeasons();
-
-        cmb_hotel.removeAllItems();
-        cmb_pension.removeAllItems();
-        cmb_room_type.removeAllItems();
-        cmb_season.removeAllItems();
-
-        for(int i = 0; i < otels.size(); i++){
-            cmb_hotel.addItem(otels.get(i).getHotel_id() + " - " + otels.get(i).getHotel_name());
+        //Combobox'a bilgiler doldurulur
+        int counter = 0;
+        for (Hotel hotel : this.hotelsManager.findAll()) {
+            if (counter == 0) {
+                getPencionByHotel(hotel.getHotel_id());
+                getSeasonByHotel(hotel.getHotel_id());
+            }
+            cmb_hotel.addItem(hotel.getComboItem());
+            counter++;
         }
-
-        for(int i = 0; i < pensions.size(); i++){
-            cmb_pension.addItem(pensions.get(i).getPension_id() + " - " + pensions.get(i).getPension_name());
-        }
-        for(int i = 0; i < seasons.size(); i++){
-            cmb_season.addItem(seasons.get(i).getSeason_id() + " - " + seasons.get(i).getSeason_name());
-        }
-
-        cmb_room_type.addItem("Single");
-        cmb_room_type.addItem("Double");
-        cmb_room_type.addItem("Suit");
-        cmb_room_type.addItem("Junior Suit");
 
         btn_room_save.addActionListener(e -> {
-            Room room = new Room();
-            RoomDetails roomDetails = new RoomDetails();
 
-            String stock = fld_stock.getText();
-            String adultPrice = fld_adult_price.getText();
-            String childPrice = fld_child_price.getText();
-            String bedCount = fld_bed_count.getText();
-            String meters = fld_meters.getText();
+            JTextField[] checkFieldList = {this.fld_stock, this.fld_adult_price, this.fld_child_price, this.fld_bed_count, this.fld_meters};
+            if (Helper.isFieldListEmpty(checkFieldList)) {
+                Helper.showMessage("fill");
+            } else {
+                boolean result = true;
+                Room room = new Room();
 
-            int hotelId = Helper.extractNumber((String) cmb_hotel.getSelectedItem());
-            int pensionId = Helper.extractNumber((String) cmb_pension.getSelectedItem());
-            int seasonId = Helper.extractNumber((String) cmb_season.getSelectedItem());
-            String roomType = (String) cmb_room_type.getSelectedItem();
+                ComboItem selectedOtelInfo = (ComboItem) cmb_hotel.getSelectedItem();
+                room.setHotel_id(selectedOtelInfo.getKey());
 
-            room.setHotel_id(hotelId);
-            room.setPension_id(pensionId);
-            room.setSeason_id(seasonId);
-            room.setRoom_type(roomType);
-            room.setRoom_stock(Integer.parseInt(stock));
-            room.setAdult_price(Integer.parseInt(adultPrice));
-            room.setChild_price(Integer.parseInt(childPrice));
+                ComboItem selectedSeasonInfo = (ComboItem) cmb_season.getSelectedItem();
+                room.setSeason_id(selectedSeasonInfo.getKey());
 
-            roomDetails.setRoom_meter(Integer.parseInt(meters));
-            roomDetails.setBed_count(Integer.parseInt(bedCount));
-            roomDetails.setIs_tv(rbtn_tv.isSelected());
-            roomDetails.setIs_minibar(rbtn_minibar.isSelected());
-            roomDetails.setIs_case(rbtn_case.isSelected());
-            roomDetails.setIs_console(rbtn_console.isSelected());
-            roomDetails.setIs_projection(rbtn_projection.isSelected());
+                ComboItem selectedPensionInfo = (ComboItem) cmb_pension.getSelectedItem();
+                room.setPension_id(selectedPensionInfo.getKey());
 
-            RoomWithDetails roomWithDetails = new RoomWithDetails(room, roomDetails);
-            RoomsDao roomsDao = new RoomsDao();
-            roomsDao.addRoom(roomWithDetails);
+                //Set etme işlemleri
+                this.room.setRoom_stock(Integer.parseInt(fld_stock.getText()));
+                this.room.setAdult_price(Integer.parseInt(fld_adult_price.getText()));
+                this.room.setChild_price(Integer.parseInt(fld_child_price.getText()));
+                this.room.setRoom_bed_capacity(Integer.parseInt(fld_bed_count.getText()));
+                this.room.setRoom_meter(Integer.parseInt(fld_meters.getText()));
+                this.room.setRoom_type(String.valueOf((Room.RoomType) cmb_room_type.getSelectedItem()));
+                this.room.setRoom_tv(rbtn_tv.isSelected());
+                this.room.setRoom_minibar(rbtn_minibar.isSelected());
+                this.room.setRoom_console(rbtn_console.isSelected());
+                this.room.setRoom_projection(rbtn_projection.isSelected());
+                this.room.setRoom_case(rbtn_case.isSelected());
+
+
+                // Yeni bir oda ekleniyorsa, odanın bilgileri kaydedilir.
+                if (room.getRoom_id() == 0) {
+                    result = this.roomManager.save(room);
+                    dispose();
+
+                }
+                if (result) {
+                    Helper.showMessage("done");
+
+
+                } else {
+                    Helper.showMessage("error");
+                }
+
+            }
+        });
+
+        cmb_hotel.addActionListener(e -> {
+            ComboItem item = (ComboItem) cmb_hotel.getSelectedItem();
+            // Seçilen otel bilgisine göre pansiyon ve sezon bilgileri güncellenir.
+            getPencionByHotel(item.getKey());
+            getSeasonByHotel(item.getKey());
 
         });
+    }
+    //Pansiyonlar combobox'a eklenir
+    private void getPencionByHotel(int hotel_id) {
+        for (Pension pension : this.pencionManager.findByHotelId(hotel_id)) {
+            cmb_pension.addItem((pension.getComboItem()));
+        }
+    }
+    //Sezonlar combobox'a eklenir
+    private void getSeasonByHotel(int hotel_id) {
+        for (Season season : this.seasonManager.findByHotelId(hotel_id)) {
+            cmb_season.addItem((season.getComboItem()));
+        }
     }
 }

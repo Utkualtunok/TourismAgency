@@ -1,95 +1,181 @@
 package dao;
 
 import core.Db;
-import dto.HotelWithDetails;
-import dto.ReservationDto;
-import dto.ReservationModelDto;
-import dto.RoomWithDetails;
+import entity.Reservation;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ReservationDao {
 
-    private Connection connection;
+    private final Connection connection;
 
     public ReservationDao() {
         this.connection = Db.getInstance();
     }
 
-    public ArrayList<Object[]> searchReservation(ReservationDto dto) {
-        String baseQuery = "SELECT room.room_id, room.room_type, room.child_price, room.adult_price, room_details.bed_count, room_details.is_tv, room_details.is_minibar, room_details.is_console, room_details.is_case, room_details.is_projection " +
-                "FROM public.room " +
-                "INNER JOIN room_details ON room.room_id = room_details.room_id " +
-                "INNER JOIN hotel ON hotel.hotel_id = room.hotel_id " +
-                "LEFT JOIN reservation ON room.room_id = reservation.room_id"; // Reservation tablosunu INNER JOIN veya LEFT JOIN olarak ekle
-
-        List<String> conditions = new ArrayList<>();
-
-        if (dto.getHotelName() != null && !dto.getHotelName().isEmpty()) {
-            conditions.add("hotel.hotel_name = '" + dto.getHotelName() + "'");
-        }
-
-        if (dto.getHotelCity() != null && !dto.getHotelCity().isEmpty()) {
-            conditions.add("hotel.hotel_city = '" + dto.getHotelCity() + "'");
-        }
-
-        if (dto.getInDate() != null && dto.getOutDate() != null &&
-                !dto.getInDate().isEmpty() && !dto.getOutDate().isEmpty()) {
-            conditions.add(
-                    "NOT (reservation.reservation_out_date < '" + dto.getInDate() + "' OR reservation.reservation_in_date > '" + dto.getOutDate() + "')"
-            );
-        }
-
-        int requiredRoomStock = 0;
-        if (dto.getAdultCount() != null && !dto.getAdultCount().isEmpty()) {
-            requiredRoomStock += Integer.valueOf(dto.getAdultCount());
-        }
-        if (dto.getChildCount() != null && !dto.getChildCount().isEmpty()) {
-            requiredRoomStock += Integer.valueOf(dto.getChildCount());
-        }
-
-        conditions.add("room.room_stock > " + requiredRoomStock);
-
-        if (!conditions.isEmpty()) {
-            baseQuery += " WHERE " + String.join(" AND ", conditions) + " ";
-        }
-
-        baseQuery += " ORDER BY room.room_id ASC";
-
-        System.out.println(baseQuery);
-
-        try (PreparedStatement stmt = connection.prepareStatement(baseQuery)) {
-            ResultSet rs = stmt.executeQuery();
-            ArrayList<Object[]> resultList = new ArrayList<>();
-
+    //Tüm rezervasyonları getiren metot
+    public ArrayList<Reservation> findAll() {
+        ArrayList<Reservation> reservationList = new ArrayList<>();
+        String sql = "SELECT * FROM public.reservation";
+        try {
+            ResultSet rs = this.connection.createStatement().executeQuery(sql);
             while (rs.next()) {
-                Object[] row = new Object[10]; // 10 columns in the SELECT query
-                row[0] = rs.getInt("room_id");
-                row[1] = rs.getString("room_type");
-                row[2] = rs.getInt("child_price");
-                row[3] = rs.getInt("adult_price");
-                row[4] = rs.getInt("bed_count");
-                row[5] = rs.getBoolean("is_tv");
-                row[6] = rs.getBoolean("is_minibar");
-                row[7] = rs.getBoolean("is_console");
-                row[8] = rs.getBoolean("is_case");
-                row[9] = rs.getBoolean("is_projection");
-
-                resultList.add(row);
+                reservationList.add(this.match(rs));
             }
-
-            return resultList;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+        return reservationList;
+    }
+
+    //Alınan verileri eşleyen metot
+    public Reservation match(ResultSet rs) throws SQLException {
+        Reservation obj = new Reservation();
+        obj.setReservation_id(rs.getInt("reservation_id"));
+        obj.setRoom_id(rs.getInt("room_id"));
+        String inDateStr = rs.getString("reservation_in_date");
+        if (isValidDate(inDateStr)) {
+            obj.setReservation_in_date(LocalDate.parse(inDateStr));
+        } else {
+            throw new DateTimeParseException("Geçersiz giriş tarihi: " + inDateStr, inDateStr, 0);
+        }
+
+        String outDateStr = rs.getString("reservation_out_date");
+        if (isValidDate(outDateStr)) {
+            obj.setReservation_out_date(LocalDate.parse(outDateStr));
+        } else {
+            throw new DateTimeParseException("Geçersiz çıkış tarihi: " + outDateStr, outDateStr, 0);
+        }
+        obj.setTotal_price(rs.getInt("total_price"));
+        obj.setGuest_count(rs.getInt("guest_count"));
+        obj.setCustomer_name(rs.getString("customer_name"));
+
+        obj.setCustomer_mail(rs.getString("customer_mail"));
+        String citizenIdStr = rs.getString("customer_citizen_id");
+        if (isNumeric(citizenIdStr)) {
+            obj.setCustomer_citizen_id(Integer.parseInt(citizenIdStr));
+        } else {
+            throw new NumberFormatException("Geçersiz kimlik numarası: " + citizenIdStr);
+        }
+        String phoneStr = rs.getString("customer_phone");
+        if (isNumeric(phoneStr)) {
+            obj.setCustomer_phone(Integer.parseInt(phoneStr));
+        } else {
+            throw new NumberFormatException("Geçersiz telefon numarası: " + phoneStr);
+        }
+
+        return obj;
+    }
+    private boolean isNumeric(String strNum) {
+
+        // Verilen string bir sayıya dönüştürülebilir mi kontrol ediliyor.
+        if (strNum == null) {
+            return false;
+        }
+        try {
+            int i = Integer.parseInt(strNum);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
+    }
+
+    //id ye göre rezervasyonları getiren metot
+    public Reservation getById(int id) {
+        Reservation obj = null;
+        String query = "SELECT * FROM public.reservation WHERE reservation_id = ?";
+        try {
+            PreparedStatement pr = this.connection.prepareStatement(query);
+            pr.setInt(1, id);
+            ResultSet rs = pr.executeQuery();
+            if (rs.next()) {
+                obj = this.match(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return obj;
+    }
+    //Rezervasyon kayıt ekleme
+    public boolean save(Reservation reservation) {
+        String query = "INSERT INTO public.reservation" +
+                "(" +
+                "room_id," +
+                "reservation_in_date," +
+                "reservation_out_date," +
+                "total_price," +
+                "guest_count," +
+                "customer_name," +
+                "customer_citizen_id," +
+                "customer_mail," +
+                "customer_phone" +
+                ")" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        try {
+            PreparedStatement pr = connection.prepareStatement(query);
+            pr.setInt(1, reservation.getRoom_id());
+            pr.setDate(2, Date.valueOf(reservation.getReservation_in_date()));
+            pr.setDate(3, Date.valueOf(reservation.getReservation_out_date()));
+            pr.setInt(4, reservation.getTotal_price());
+            pr.setInt(5, reservation.getGuest_count());
+            pr.setString(6, reservation.getCustomer_name());
+            pr.setInt(7, reservation.getCustomer_citizen_id());
+            pr.setString(8, reservation.getCustomer_mail());
+            pr.setInt(9, reservation.getCustomer_phone());
+
+            return pr.executeUpdate() != -1;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return true;
+    }
+    //Rezervasyon güncelleme
+    public boolean update(Reservation reservation) {
+        String query = "UPDATE public.reservation SET " +
+                "guest_count= ? , " +
+                "customer_name= ? , " +
+                "customer_citizen_id= ? , " +
+                "customer_mail= ? , "  +
+                "customer_phone= ? " +
+                "WHERE reservation_id = ? ";
+        try {
+            PreparedStatement pr = connection.prepareStatement(query);
+            pr.setInt(1, reservation.getGuest_count());
+            pr.setString(2, reservation.getCustomer_name());
+            pr.setInt(3, reservation.getCustomer_citizen_id());
+            pr.setString(4, reservation.getCustomer_mail());
+            pr.setInt(5, reservation.getCustomer_phone());
+            pr.setInt(6,reservation.getReservation_id());
+            return pr.executeUpdate() != -1;
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return true;
+    }
+
+    //Rezervasyon silme işlemi
+    public boolean delete(int id) {
+        String query = "DELETE FROM public.reservation WHERE reservation_id = ?";
+        try {
+            PreparedStatement pr = this.connection.prepareStatement(query);
+            pr.setInt(1, id);
+            return pr.executeUpdate() != -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+    private boolean isValidDate(String dateStr) {
+        try {
+            LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
         }
     }
 
-    public List<HotelWithDetails> listHotels(){
-        return null;
-    }
 }
